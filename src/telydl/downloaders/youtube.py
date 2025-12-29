@@ -1,34 +1,13 @@
 import logging
 from pathlib import Path
 
-from telydl.downloaders.abstract import DownloadCallback, BaseYDLDownloader
-import yt_dlp
+from telydl.downloaders.abstract import BaseYDLDownloader
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.DEBUG)
 
 
 class YtDlpDownloader(BaseYDLDownloader):
-    base_directory: Path
-    start_callback: DownloadCallback | None
-    success_callback: DownloadCallback | None
-    error_callback: DownloadCallback | None
-
-    def __init__(
-        self,
-        ydl: yt_dlp.YoutubeDL,
-        base_directory: str = "downloads",
-        start_callback: DownloadCallback = None,
-        success_callback: DownloadCallback = None,
-        error_callback: DownloadCallback = None,
-    ):
-        self.base_directory = Path(base_directory)
-        self.start_callback = start_callback
-        self.success_callback = success_callback
-        self.error_callback = error_callback
-        self.base_directory.mkdir(parents=True, exist_ok=True)
-        super().__init__(ydl=ydl)
-
     def _post_process(self, data):
         if (
             data.get("postprocessor") == "MoveFiles"

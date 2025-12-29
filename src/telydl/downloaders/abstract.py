@@ -13,19 +13,22 @@ type DownloadCallback = Callable[[str], Awaitable[None]]
 
 class DownloaderProtocol(Protocol):
     base_directory: Path
-    start_callback: DownloadCallback | None
-    success_callback: DownloadCallback | None
-    error_callback: DownloadCallback | None
 
-    async def download(self, urls: list[str] | str) -> bool: ...
+    async def download(
+        self, urls: list[str] | str, start_callback: DownloadCallback | None = None
+    ) -> bool: ...
 
 
 class BaseDownloader:
-    async def download(self, urls: str | list[str]) -> bool:
+    async def download(
+        self, urls: str | list[str], start_callback: DownloadCallback | None = None
+    ) -> bool:
         url_list = urls if isinstance(urls, list) else [urls]
-        return await asyncio.to_thread(self._download_sync, url_list)
+        return await asyncio.to_thread(self._download_sync, url_list, start_callback)
 
-    def _download_sync(urls: Iterable[str]) -> bool:
+    def _download_sync(
+        urls: Iterable[str], start_callback: DownloadCallback | None = None
+    ) -> bool:
         raise NotImplementedError
 
     def iter_infos(self, url_list: list[str]):
@@ -42,14 +45,14 @@ class BaseDownloader:
 
 
 class BaseYDLDownloader(BaseDownloader, DownloaderProtocol):
-    ydl: "YoutubeDL"
-    base_directory: Path
-
-    def __init__(self, ydl: "YoutubeDL"):
+    def __init__(self, ydl: "YoutubeDL", base_directory: Path):
         self.ydl = ydl
+        self.base_directory = base_directory
         self.ydl.params["outtmpl"]["default"] = str(
             self.base_directory / "%(title)s.%(ext)s"
         )
+        self.base_directory = Path(base_directory)
+        self.base_directory.mkdir(parents=True, exist_ok=True)
 
     def _set_outtmpl(self, info: dict):
         channel = info.get("channel") or info.get("uploader") or ""
@@ -69,20 +72,19 @@ class BaseYDLDownloader(BaseDownloader, DownloaderProtocol):
         return self.ydl.prepare_filename(info)
 
     def _download_sync(
-        self,
-        url_list: list[str],
+        self, url_list: list[str], start_callback: DownloadCallback | None = None
     ) -> bool:
         failed = False
 
         for info in self.iter_infos(url_list):
             name = f"{info.get('artist')} - {info.get('fulltitle')}"
-            self._run_callback(self.start_callback, name)
+            self._run_callback(start_callback, name)
             try:
                 self.download_from_info(info)
-                self._run_callback(self.success_callback, name)
+                # self._run_callback(self.success_callback, name)
             except Exception:
                 _logger.exception("Error downloading %s", name)
                 failed = True
-                self._run_callback(self.error_callback, name)
+                # self._run_callback(self.error_callback, name)
 
         return not failed

@@ -22,7 +22,9 @@ class Downloader:
         self.spotify = TokelessSpotifyDownloader(ydl=ydl, base_directory=base_directory)
         self.youtube = YtDlpDownloader(ydl=ydl, base_directory=base_directory)
 
-    async def download(self, urls: list[str] | str) -> bool:
+    async def download(
+        self, urls: list[str] | str, start_callback: DownloadCallback | None = None
+    ) -> bool:
         urls = (
             [
                 urls,
@@ -32,10 +34,14 @@ class Downloader:
         )
         tasks = []
         if spotify_urls := [u for u in urls if "open.spotify" in u]:
-            tasks.append(self.spotify.download(spotify_urls))
+            tasks.append(
+                self.spotify.download(spotify_urls, start_callback=start_callback)
+            )
 
         if youtube_urls := [u for u in urls if "open.spotify" not in u]:
-            tasks.append(self.youtube.download(youtube_urls))
+            tasks.append(
+                self.youtube.download(youtube_urls, start_callback=start_callback)
+            )
 
         return all(await asyncio.gather(*tasks))
 

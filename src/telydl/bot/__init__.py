@@ -110,10 +110,13 @@ class TelyDlBot:
             return
 
         start_time = time.perf_counter()
-        self.downloader.youtube.start_callback = lambda url: context.bot.send_message(
-            chat_id=chat_id, text="started.."
-        )
-        if await self.downloader.download(urls):
+
+        if await self.downloader.download(
+            urls,
+            start_callback=lambda url: context.bot.send_message(
+                chat_id=chat_id, text=f"started: {url}"
+            ),
+        ):
             await message.set_reaction(ReactionTypeEmoji("❤️"))
         else:
             await message.set_reaction(ReactionTypeEmoji("👎"))

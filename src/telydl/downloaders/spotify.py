@@ -1,7 +1,6 @@
 import logging
-from pathlib import Path
 
-from telydl.downloaders.abstract import DownloadCallback, BaseYDLDownloader
+from telydl.downloaders.abstract import BaseYDLDownloader
 import re
 
 import requests
@@ -10,34 +9,13 @@ from bs4 import BeautifulSoup
 import typing
 
 if typing.TYPE_CHECKING:
-    from yt_dlp import YoutubeDL
+    pass
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.DEBUG)
 
 
 class TokelessSpotifyDownloader(BaseYDLDownloader):
-    base_directory: Path
-    start_callback: DownloadCallback | None
-    success_callback: DownloadCallback | None
-    error_callback: DownloadCallback | None
-
-    def __init__(
-        self,
-        ydl: "YoutubeDL",
-        base_directory: str = "downloads",
-        start_callback: DownloadCallback | None = None,
-        success_callback: DownloadCallback | None = None,
-        error_callback: DownloadCallback | None = None,
-    ):
-        self.base_directory = Path(base_directory)
-        self.base_directory.mkdir(parents=True, exist_ok=True)
-
-        self.start_callback = start_callback
-        self.success_callback = success_callback
-        self.error_callback = error_callback
-        super().__init__(ydl=ydl)
-
     def _fetch_track_metadata(self, spotify_url: str) -> dict:
         """
         Fetch metadata for a Spotify track/album/playlist.
