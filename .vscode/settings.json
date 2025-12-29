@@ -1,0 +1,19 @@
+{
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "editor.formatOnSave": true,
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+    },
+    "python.formatting.provider": "none",
+    "ruff.enable": true,
+    "python.analysis.extraPaths": [
+        "src"
+    ],
+    "svn.ignoreMissingSvnWarning": true
+}

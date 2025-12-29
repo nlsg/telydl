@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "telydl"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "python-dotenv>=1.2.1",
+    "python-telegram-bot>=22.5",
+    "spotdl>=4.4.3",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+packages = ["telydl"]
+
+[tool.uv]
+dev-dependencies = [
+    "pre-commit>=4.2.0",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
