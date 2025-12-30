@@ -1,11 +1,14 @@
+from typing import Iterable
 import logging
 import typing
 import time
+import functools
 from datetime import datetime
+from pathlib import Path
 
 import re
 
-from telegram import Update, ForceReply, User, Message, ReactionTypeEmoji
+from telegram import Update, ForceReply, User, Message, ReactionTypeEmoji, BotCommand
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -27,6 +30,8 @@ if typing.TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
+type CommandPredicate = callable[[Update, ContextTypes.DEFAULT_TYPE], bool]
+
 
 class TelyDlBot:
     def __init__(
@@ -37,23 +42,45 @@ class TelyDlBot:
         self._started = False
         self.whitelist = whitelist
 
-        self.app.add_handler(CommandHandler("start", self._start_command))
-        self.app.add_handler(CommandHandler("list", self._list_command))
-        # self.app.add_handler(CommandHandler("help", self._help_command))
-        self.app.add_handler(
-            MessageHandler(filters.TEXT & ~filters.COMMAND, self._process_text_command)
-        )
-        self.app.add_error_handler(self._error_handler)
-
     async def start(self):
         if self._started:
             return
 
         _logger.info("Starting Telegram bot")
 
+        self.app.add_handlers(
+            [
+                CommandHandler("help", self._help_command),
+                CommandHandler(
+                    "list",
+                    self.require(
+                        [self.is_authenticated], reason="authentication required"
+                    )(self._list_command),
+                ),
+                CommandHandler(
+                    "get_log",
+                    self.require(
+                        [self.is_authenticated], reason="authentication required"
+                    )(self._get_log_command),
+                ),
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND, self._process_text_command
+                ),
+            ]
+        )
+        self.app.add_error_handler(self._error_handler)
+
         await self.app.initialize()
         await self.app.start()
         await self.app.updater.start_polling()
+
+        await self.app.bot.set_my_commands(
+            [
+                # BotCommand("help", "list download archive"),
+                BotCommand("list", "list download archive"),
+                BotCommand("get_log", "get application logs"),
+            ]
+        )
 
         self._started = True
 
@@ -69,8 +96,36 @@ class TelyDlBot:
 
         self._started = False
 
-    def _check_user(self, user: User):
-        return user.id in self.whitelist
+    @staticmethod
+    def require(
+        predicates: Iterable[CommandPredicate] | CommandPredicate,
+        reason: str | None = None,
+    ):
+        """
+        Abort a Telegram command if predicate(update, context) returns True.
+        Optionally reply with a reason.
+        """
+
+        predicates = (
+            predicates
+            if isinstance(predicates, Iterable)
+            else [
+                predicates,
+            ]
+        )
+
+        def decorator(func):
+            @functools.wraps(func)
+            async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+                if all(predicate(update, context) for predicate in predicates):
+                    return await func(update, context)
+                if reason and update.message:
+                    await update.message.reply_text(reason)
+                return
+
+            return wrapper
+
+        return decorator
 
     @staticmethod
     def get_urls(message: Message) -> list[str] | str | None:
@@ -80,6 +135,30 @@ class TelyDlBot:
         except AttributeError:
             ...
         return re.findall(URL_REGEX, message.text) or None
+
+    def is_authenticated(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> bool:
+        return update.effective_user.id in self.whitelist
+
+    def _get_callback(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> "DownloadCallback":
+        chat_id = update.effective_chat.id
+
+        def callback(status: "DownloadStatus", message: str):
+            if status == "info":
+                return context.bot.send_message(
+                    chat_id=chat_id, text=message, disable_notification=True
+                )
+            elif status == "success":
+                return context.bot.send_message(chat_id=chat_id, text=message)
+            elif status == "error":
+                return context.bot.send_message(chat_id=chat_id, text=message)
+
+        return callback
+
+    # handlers
 
     async def _start_command(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
@@ -105,6 +184,11 @@ class TelyDlBot:
         )
         await update.message.reply_markdown(output)
 
+    async def _get_log_command(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        await update.message.reply_document(Path("bot.log").resolve())
+
     async def _help_command(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
@@ -124,7 +208,7 @@ class TelyDlBot:
         message = update.message
         chat_id = update.effective_chat.id
 
-        if not self._check_user(update.effective_user):
+        if not self.is_authenticated(update=update, context=context):
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=f"{update.effective_user.name} is not authorized, authorization request sent!",
@@ -151,20 +235,3 @@ class TelyDlBot:
             text=f"processing urls finished:\nurls:{urls}\ntime: {time.perf_counter() - start_time}\nfinished:{datetime.now()}",
             disable_web_page_preview=True,
         )
-
-    def _get_callback(
-        self, update: Update, context: ContextTypes.DEFAULT_TYPE
-    ) -> "DownloadCallback":
-        chat_id = update.effective_chat.id
-
-        def callback(status: "DownloadStatus", message: str):
-            if status == "info":
-                return context.bot.send_message(
-                    chat_id=chat_id, text=message, disable_notification=True
-                )
-            elif status == "success":
-                return context.bot.send_message(chat_id=chat_id, text=message)
-            elif status == "error":
-                return context.bot.send_message(chat_id=chat_id, text=message)
-
-        return callback
