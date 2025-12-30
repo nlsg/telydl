@@ -24,6 +24,18 @@ _logger.debug("starting application...")
 dotenv.load_dotenv()
 
 
+class InfoValidationError(Exception):
+    pass
+
+
+def info_hook(info: dict):
+    title = info.get("fulltitle")
+    duration = info.get("duration") / 60
+    if not (2 < duration < 10):
+        raise InfoValidationError(f"duration invalid: {title=}, {duration=}")
+    return info
+
+
 async def tely_main():
     # ---- codec-specific configuration ----
     mode = "mp3"
@@ -66,6 +78,7 @@ async def tely_main():
     downloader = Downloader(
         ydl=ydl,
         base_directory=base_directory,
+        info_hook=info_hook,
     )
     _logger.debug("initialized downloader")
     bot = TelyDlBot(

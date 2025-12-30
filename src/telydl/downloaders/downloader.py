@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
 
 from .youtube import YtDlpDownloader
 from .spotify import TokelessSpotifyDownloader
-from .abstract import DownloadCallback
+from .abstract import DownloadCallback, InfoHook
 
 _logger = logging.getLogger(__name__)
 
@@ -19,13 +19,14 @@ class Downloader:
         self,
         ydl: "YoutubeDL",
         base_directory: Path,
+        info_hook: InfoHook = None,
     ):
         self.base_directory = base_directory
         self.spotify = TokelessSpotifyDownloader(
-            ydl=ydl, base_directory=base_directory / "spotify"
+            ydl=ydl, base_directory=base_directory / "spotify", info_hook=info_hook
         )
         self.youtube = YtDlpDownloader(
-            ydl=ydl, base_directory=base_directory / "youtube"
+            ydl=ydl, base_directory=base_directory / "youtube", info_hook=info_hook
         )
 
     def set_loop(self, loop):
