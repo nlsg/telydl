@@ -33,9 +33,7 @@ class TokelessSpotifyDownloader(BaseYDLDownloader):
         if title and desc:
             # Single track
             return [{"title": title["content"], "artist": desc["content"]}]
-        rows = soup.select('[data-testid="tracklist-row"]')
-        # data-testid="tracklist-row"
-        # Playlist/album scraping fallback
+
         if re.search(r'(\{"name":".*?,"uri":".*?","artists":\[.*?\]\})', r.text):
             tracks = []
             for item in re.findall(r'(\{"name":".*?","artists":\[.*?\]\})', r.text):

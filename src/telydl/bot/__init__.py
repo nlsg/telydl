@@ -1,7 +1,6 @@
 import logging
 import typing
 import time
-from functools import partial
 from datetime import datetime
 
 import re
