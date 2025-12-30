@@ -1,0 +1,13 @@
+[Unit]
+Description=TelyDl Telegram Bot Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=uv run python main.py
+WorkingDirectory=%h/telydl
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
