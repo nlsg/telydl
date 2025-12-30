@@ -15,6 +15,8 @@ from telegram.ext import (
     filters,
 )
 
+from telydl.util import run_shell, URL_REGEX
+
 if typing.TYPE_CHECKING:
     from telegram.ext import Application
     from telydl.downloaders.abstract import (
@@ -24,11 +26,6 @@ if typing.TYPE_CHECKING:
     )
 
 _logger = logging.getLogger(__name__)
-
-URL_REGEX = re.compile(
-    r"https?://[^\s<>\"]+",
-    re.IGNORECASE,
-)
 
 
 class TelyDlBot:
@@ -41,7 +38,8 @@ class TelyDlBot:
         self.whitelist = whitelist
 
         self.app.add_handler(CommandHandler("start", self._start_command))
-        self.app.add_handler(CommandHandler("help", self._help_command))
+        self.app.add_handler(CommandHandler("list", self._list_command))
+        # self.app.add_handler(CommandHandler("help", self._help_command))
         self.app.add_handler(
             MessageHandler(filters.TEXT & ~filters.COMMAND, self._process_text_command)
         )
@@ -91,6 +89,21 @@ class TelyDlBot:
             rf"Hi {user.mention_html()}!",
             reply_markup=ForceReply(selective=True),
         )
+
+    async def _list_command(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        base_dir = str(self.downloader.base_directory.resolve())
+        output = (
+            "TREE:\n"
+            + run_shell(
+                "tree",
+                base_dir,
+            )
+            + "\n\nDU: "
+            + run_shell("du", "-h", base_dir)
+        )
+        await update.message.reply_markdown(output)
 
     async def _help_command(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE

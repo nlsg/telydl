@@ -20,6 +20,7 @@ class Downloader:
         ydl: "YoutubeDL",
         base_directory: Path,
     ):
+        self.base_directory = base_directory
         self.spotify = TokelessSpotifyDownloader(
             ydl=ydl, base_directory=base_directory / "spotify"
         )

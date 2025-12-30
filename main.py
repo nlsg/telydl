@@ -2,7 +2,6 @@ import asyncio
 import signal
 import os
 import logging
-from logging.handlers import RotatingFileHandler
 
 from pathlib import Path
 
@@ -14,28 +13,14 @@ import yt_dlp
 from telydl.bot import TelyDlBot
 from telydl.downloaders import Downloader
 
-logging.getLogger("httpx").setLevel(logging.WARNING)
+from telydl.util import setup_logging
 
-_logger = logging.getLogger()
-_logger.setLevel(logging.INFO)
-
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(formatter)
-_logger.addHandler(console_handler)
-
-file_handler = RotatingFileHandler(
-    "bot.log",
-    maxBytes=5 * 1024 * 1024,
-)
-file_handler.setFormatter(formatter)
-_logger.addHandler(file_handler)
+setup_logging()
 
 _logger = logging.getLogger(__name__)
-
 _logger.setLevel(logging.DEBUG)
 _logger.debug("starting application...")
+
 dotenv.load_dotenv()
 
 
