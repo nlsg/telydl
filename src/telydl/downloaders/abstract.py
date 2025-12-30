@@ -48,9 +48,9 @@ class BaseDownloader(ABC):
     def _run_callback(
         self, cb: DownloadCallback | None, status: DownloadStatus, message: str
     ) -> None:
-        _logger.debug(f"running callback: {status=}, {message=}")
         if cb is None or self.loop is None:
             return
+        _logger.debug(f"running callback: {status=}, {message=}")
         self.loop.call_soon_threadsafe(lambda: asyncio.create_task(cb(status, message)))
 
 

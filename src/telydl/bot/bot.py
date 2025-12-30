@@ -25,7 +25,6 @@ if typing.TYPE_CHECKING:
     from telydl.downloaders.abstract import (
         DownloaderProtocol,
         DownloadStatus,
-        DownloadCallback,
     )
 
 _logger = logging.getLogger(__name__)
@@ -141,19 +140,6 @@ class TelyDlBot:
             f"unauthorized user: {update.effective_user}"
         )
 
-    def _get_callback(
-        self, update: Update, context: ContextTypes.DEFAULT_TYPE
-    ) -> "DownloadCallback":
-        async def callback(status: "DownloadStatus", message: str):
-            message = f"[{status}]: {message}"
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=message,
-                disable_notification=status != "error",
-            )
-
-        return callback
-
     # handlers
 
     async def _start_command(
@@ -218,10 +204,16 @@ class TelyDlBot:
             await context.bot.send_message(chat_id=chat_id, text="invalid URL!")
             return
 
+        async def status_callback(status: "DownloadStatus", message: str):
+            message = f"[{status}]: {message}"
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=message,
+                disable_notification=status != "error",
+            )
+
         start_time = time.perf_counter()
-        results = await self.downloader.download(
-            urls, status_callback=self._get_callback(update=update, context=context)
-        )
+        results = await self.downloader.download(urls, status_callback=status_callback)
         if all(results):
             await message.set_reaction(ReactionTypeEmoji("❤️"))
         else:
