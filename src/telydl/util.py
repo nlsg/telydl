@@ -20,8 +20,6 @@ def run_shell(*args: str) -> str:
 
 
 def setup_logging():
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-
     _logger = logging.getLogger()
     _logger.setLevel(logging.INFO)
 
@@ -39,3 +37,6 @@ def setup_logging():
     )
     file_handler.setFormatter(formatter)
     _logger.addHandler(file_handler)
+
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("telydl").setLevel(logging.DEBUG)
