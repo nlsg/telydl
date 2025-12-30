@@ -56,13 +56,21 @@ async def tely_main():
     }
 
     stop_event = asyncio.Event()
-    loop = asyncio.get_running_loop()
 
     ydl = yt_dlp.YoutubeDL(ydl_opts)
     downloader = Downloader(ydl=ydl, base_directory=Path("downloads"))
-    bot = TelyDlBot(token=os.getenv("TELEGRAM_BOT_TOKEN"), downloader=downloader)
+    bot = TelyDlBot(
+        token=os.getenv("TELYDL_BOT_TOKEN"),
+        downloader=downloader,
+        whitelist=[int(id) for id in os.getenv("TELYDL_WHITELIST").split(",")],
+    )
+
+    loop = asyncio.get_running_loop()
+    downloader.set_loop(loop)
+
     await bot.start()
 
+    loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, stop_event.set)
 

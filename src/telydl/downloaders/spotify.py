@@ -33,24 +33,26 @@ class TokelessSpotifyDownloader(BaseYDLDownloader):
         if title and desc:
             # Single track
             return [{"title": title["content"], "artist": desc["content"]}]
-
+        rows = soup.select('[data-testid="tracklist-row"]')
+        # data-testid="tracklist-row"
         # Playlist/album scraping fallback
-        m = re.search(r'(\{"name":".*?,"uri":".*?","artists":\[.*?\]\})', r.text)
-        if m:
-            items = re.findall(r'(\{"name":".*?","artists":\[.*?\]\})', r.text)
+        if re.search(r'(\{"name":".*?,"uri":".*?","artists":\[.*?\]\})', r.text):
             tracks = []
-            for item in items:
+            for item in re.findall(r'(\{"name":".*?","artists":\[.*?\]\})', r.text):
                 track_title = re.search(r'"name":"(.*?)"', item).group(1)
                 artist = re.search(r'"artists":\[{"name":"(.*?)"', item).group(1)
                 tracks.append({"title": track_title, "artist": artist})
             return tracks
 
-        # Fallback
         raise RuntimeError("Unable to fetch Spotify metadata")
 
     def iter_infos(self, url_list: list[str]):
         for url in url_list:
-            tracks = self._fetch_track_metadata(url)
+            try:
+                tracks = self._fetch_track_metadata(url)
+            except RuntimeError as e:
+                _logger.error(e)
+                continue
 
             for track in tracks:
                 query = f"{track['artist']} - {track['title']}"
