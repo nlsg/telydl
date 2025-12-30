@@ -75,7 +75,8 @@ async def tely_main():
 
     ydl = yt_dlp.YoutubeDL(ydl_opts)
     downloader = Downloader(
-        ydl=ydl, base_directory=Path(os.getenv("TELYDL_BASE_DIR", "downloads"))
+        ydl=ydl,
+        base_directory=Path(os.getenv("TELYDL_BASE_DIRECTORY", "downloads")).resolve(),
     )
     _logger.debug("initialized downloader")
     bot = TelyDlBot(
