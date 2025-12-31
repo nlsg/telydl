@@ -18,5 +18,5 @@ echo "TelyDl service installed successfully."
 echo "To start the service, run: systemctl --user start $SERVICE_FILE"
 echo "To check status, run: systemctl --user status $SERVICE_FILE"
 
-watch journalctl --user --unit telydl.service
+watch systemctl --user status "$SERVICE_FILE"
 
