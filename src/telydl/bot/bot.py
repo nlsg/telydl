@@ -210,6 +210,7 @@ class TelyDlBot:
                 chat_id=update.effective_chat.id,
                 text=message,
                 disable_notification=status != "error",
+                disable_web_page_preview=not any("spotify" in u for u in urls),
             )
 
         start_time = time.perf_counter()
@@ -220,6 +221,6 @@ class TelyDlBot:
             await message.set_reaction(ReactionTypeEmoji("👎"))
         await context.bot.send_message(
             chat_id=chat_id,
-            text=f"processing urls finished:\nurls:{urls}\ntime: {time.perf_counter() - start_time}\nfinished:{datetime.now()}",
+            text=f"processing urls finished:\n{results=}\ntime: {time.perf_counter() - start_time}\nfinished:{datetime.now()}",
             disable_web_page_preview=True,
         )

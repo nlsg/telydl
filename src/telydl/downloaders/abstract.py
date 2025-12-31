@@ -94,19 +94,16 @@ class BaseYDLDownloader(BaseDownloader):
         results = []
         for info in self.iter_infos(url_list):
             url = info.get("original_url")
-            name = (
-                f"{info.get('artist') or info.get('channel')} - {info.get('fulltitle')}"
-            )
-            self._run_callback(status_callback, "info", f"starting: {name}")
+            self._run_callback(status_callback, "info", "starting...")
             try:
                 if self.info_hook:
                     info = self.info_hook(info) or info
                 results.append(path := self.download_from_info(info))
-                self._run_callback(
-                    status_callback, "success", f"{name}\n{path=}\n{url=}"
-                )
+                self._run_callback(status_callback, "success", f"{path=}\n{url=}")
             except Exception as e:
-                self._run_callback(status_callback, "error", f"{name}: {e}")
+                self._run_callback(
+                    status_callback, "error", f"{info.get('fulltitle')}: {e}"
+                )
                 _logger.exception(e)
                 results.append(None)
 
