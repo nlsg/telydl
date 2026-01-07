@@ -7,7 +7,8 @@ SERVICE_FILE="telydl.service"
 echo "Installing TelyDl systemd service..."
 
 mkdir -p "$SERVICE_DIR"
-cp "$SERVICE_FILE" "$SERVICE_DIR/"
+
+sed 's|^WorkingDirectory=.*|WorkingDirectory=%h/telydl|' "$SERVICE_FILE" > "$SERVICE_DIR/$SERVICE_FILE"
 
 systemctl --user stop "$SERVICE_FILE"
 systemctl --user daemon-reload
