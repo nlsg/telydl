@@ -1,6 +1,7 @@
 from typing import Iterable
 import logging
 import typing
+import os
 import time
 import functools
 from datetime import datetime
@@ -62,6 +63,12 @@ class TelyDlBot:
                         [self.is_authorized], reason="authentication required"
                     )(self._get_log_command),
                 ),
+                CommandHandler(
+                    "rsync",
+                    self.require(
+                        [self.is_authorized], reason="authentication required"
+                    )(self._rsync_command),
+                ),
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND, self._process_text_command
                 ),
@@ -78,6 +85,7 @@ class TelyDlBot:
                 # BotCommand("help", "list download archive"),
                 BotCommand("list", "list download archive"),
                 BotCommand("get_log", "get application logs"),
+                BotCommand("rsync", "run sync command."),
             ]
         )
 
@@ -150,6 +158,12 @@ class TelyDlBot:
             rf"Hi {user.mention_html()}!",
             reply_markup=ForceReply(selective=True),
         )
+
+    async def _rsync_command(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        output = run_shell(*os.getenv("TELYDL_RSYNC").split(" "))
+        await update.message.reply_markdown(output)
 
     async def _list_command(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
