@@ -27,7 +27,7 @@ def run_shell(*args: str) -> str:
     return output + f"\ntook: {time.perf_counter() - t:.3}s"
 
 
-def setup_logging():
+def setup_logging(log_file: str):
     _logger = logging.getLogger()
     _logger.setLevel(logging.INFO)
 
@@ -39,12 +39,13 @@ def setup_logging():
     console_handler.setFormatter(formatter)
     _logger.addHandler(console_handler)
 
-    file_handler = RotatingFileHandler(
-        "bot.log",
-        maxBytes=5 * 1024 * 1024,
-    )
-    file_handler.setFormatter(formatter)
-    _logger.addHandler(file_handler)
+    if log_file:
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=5 * 1024 * 1024,
+        )
+        file_handler.setFormatter(formatter)
+        _logger.addHandler(file_handler)
 
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("telydl").setLevel(logging.DEBUG)
