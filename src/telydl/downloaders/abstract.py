@@ -1,4 +1,4 @@
-from typing import Protocol, Awaitable, Callable, Iterable, Literal
+from typing import Protocol, Awaitable, Callable, Iterable, Literal, Iterator
 from pathlib import Path
 import asyncio
 import typing
@@ -42,7 +42,7 @@ class BaseDownloader(ABC):
 
     @staticmethod
     @abstractclassmethod
-    def iter_infos(self, url_list: list[str]):
+    def iter_infos(self, url_list: list[str]) -> Iterator[dict]:
         raise NotImplementedError
 
     def _run_callback(
@@ -94,7 +94,9 @@ class BaseYDLDownloader(BaseDownloader):
         results = []
         for info in self.iter_infos(url_list):
             url = info.get("original_url")
-            self._run_callback(status_callback, "info", "starting...")
+            self._run_callback(
+                status_callback, "info", f"starting...[{info.get('duration')}]"
+            )
             try:
                 if self.info_hook:
                     info = self.info_hook(info) or info
