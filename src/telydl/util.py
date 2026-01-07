@@ -1,4 +1,5 @@
 import re
+import time
 import subprocess
 import logging
 from logging.handlers import RotatingFileHandler
@@ -10,13 +11,20 @@ URL_REGEX = re.compile(
 
 
 def run_shell(*args: str) -> str:
-    result = subprocess.run(
-        args,
-        capture_output=True,
-        text=True,
-    )
+    _logger = logging.getLogger("shell")
+    try:
+        t = time.perf_counter()
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+        )
+    except Exception as e:
+        return str(e)
 
-    return result.stderr.strip() if result.returncode != 0 else result.stdout.strip()
+    _logger.info(f"running shellcommand: {args}")
+    output = result.stderr.strip() if result.returncode != 0 else result.stdout.strip()
+    return output + f"\ntook: {time.perf_counter() - t:.3}s"
 
 
 def setup_logging():
