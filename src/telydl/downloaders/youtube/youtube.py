@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from telydl.downloaders.abstract import BaseYDLDownloader
+from telydl.downloaders.youtube.abstract import BaseYDLDownloader
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.DEBUG)

@@ -1,6 +1,6 @@
 import logging
 
-from telydl.downloaders.abstract import BaseYDLDownloader
+from telydl.downloaders.youtube.abstract import BaseYDLDownloader
 import re
 
 import requests

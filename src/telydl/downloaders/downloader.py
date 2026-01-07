@@ -7,9 +7,9 @@ import itertools
 if typing.TYPE_CHECKING:
     from yt_dlp import YoutubeDL
 
-from .youtube import YtDlpDownloader
-from .spotify import TokelessSpotifyDownloader
-from .abstract import DownloadCallback, InfoHook
+from telydl.downloaders.youtube.youtube import YtDlpDownloader
+from telydl.downloaders.youtube.spotify import TokelessSpotifyDownloader
+from telydl.downloaders.youtube.abstract import DownloadCallback, InfoHook
 
 _logger = logging.getLogger(__name__)
 
