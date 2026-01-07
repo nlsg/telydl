@@ -9,12 +9,21 @@ from pathlib import Path
 
 import re
 
-from telegram import Update, ForceReply, Message, ReactionTypeEmoji, BotCommand
+from telegram import (
+    Update,
+    ForceReply,
+    Message,
+    ReactionTypeEmoji,
+    BotCommand,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+)
 from telegram.ext import (
     Application,
     ApplicationBuilder,
     CommandHandler,
     MessageHandler,
+    CallbackQueryHandler,
     ContextTypes,
     filters,
 )
@@ -52,6 +61,19 @@ class TelyDlBot:
             [
                 CommandHandler("help", self._help_command),
                 CommandHandler(
+                    "get",
+                    self.require(
+                        [self.is_authorized], reason="authentication required"
+                    )(self._get_file_command),
+                ),
+                CommandHandler(
+                    "remove",
+                    self.require(
+                        [self.is_authorized], reason="authentication required"
+                    )(self._remove_command),
+                ),
+                CallbackQueryHandler(self._remove_callback, pattern=r"^remove:"),
+                CommandHandler(
                     "list",
                     self.require(
                         [self.is_authorized], reason="authentication required"
@@ -84,6 +106,8 @@ class TelyDlBot:
             [
                 # BotCommand("help", "list download archive"),
                 BotCommand("list", "list download archive"),
+                BotCommand("get", "<pattern>: list download archive"),
+                BotCommand("remove", "<pattern>: remove a file from storage"),
                 BotCommand("get_log", "get application logs"),
                 BotCommand("rsync", "run sync command."),
             ]
@@ -170,15 +194,96 @@ class TelyDlBot:
     ) -> None:
         base_dir = str(self.downloader.base_directory.resolve())
         output = (
-            "TREE:\n"
-            + run_shell(
+            run_shell(
                 "tree",
                 base_dir,
             )
-            + "\n\nDU: "
+            + "\n\n"
             + run_shell("du", "-h", base_dir)
         )
         await update.message.reply_markdown(output)
+
+    async def _remove_command(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        base_dir = self.downloader.base_directory.resolve()
+        if len(context.args) != 1:
+            await update.message.reply_text("Usage: /remove <pattern>")
+            return
+
+        pattern = context.args[0]
+        paths = list(map(str, base_dir.rglob(pattern)))
+
+        if not paths:
+            await update.message.reply_text("No matching files.")
+            return
+
+        context.user_data["remove_paths"] = paths
+
+        keyboard = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "✅ Confirm remove",
+                        callback_data="remove:confirm",
+                    ),
+                    InlineKeyboardButton(
+                        "❌ Cancel",
+                        callback_data="remove:cancel",
+                    ),
+                ]
+            ]
+        )
+
+        await update.message.reply_text(
+            f"Do you want to remove ( {len(paths)} ):\n\n" + "\n".join(paths),
+            reply_markup=keyboard,
+        )
+
+    async def _remove_callback(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        query = update.callback_query
+        await query.answer()
+
+        paths = context.user_data.get("remove_paths")
+
+        if not paths:
+            await query.edit_message_text("No pending remove operation.")
+            return
+
+        if query.data == "remove:confirm":
+            out = run_shell("rm", *paths)
+            await query.edit_message_text("done!" + f"\n{out}" if out else "")
+        else:
+            await query.edit_message_text("cancelled!")
+
+        context.user_data.pop("remove_paths", None)
+
+    async def _get_file_command(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ):
+        if len(context.args) != 1:
+            await update.message.reply_text(
+                "Usage: /get <file/pattern> must just match one file"
+            )
+            return
+
+        base_dir = self.downloader.base_directory.resolve()
+        pattern = context.args[0]
+        paths = list(base_dir.rglob(pattern))
+
+        if not paths:
+            await update.message.reply_text("no match found")
+            return
+
+        if len(paths) > 1:
+            await update.message.reply_text(
+                "must exactly match one file, got:\n" + "\n".join(map(str, paths))
+            )
+            return
+
+        await update.message.reply_document(paths[0])
 
     async def _get_log_command(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE

@@ -27,7 +27,7 @@ def run_shell(*args: str) -> str:
     return output + f"\ntook: {time.perf_counter() - t:.3}s"
 
 
-def setup_logging(log_file: str):
+def setup_logging(log_file: str | None = None):
     _logger = logging.getLogger()
     _logger.setLevel(logging.INFO)
 
