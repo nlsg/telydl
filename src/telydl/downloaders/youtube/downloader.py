@@ -14,7 +14,7 @@ from telydl.downloaders.youtube.abstract import DownloadCallback, InfoHook
 _logger = logging.getLogger(__name__)
 
 
-class Downloader:
+class YoutubeDownloader:
     def __init__(
         self,
         ydl: "YoutubeDL",

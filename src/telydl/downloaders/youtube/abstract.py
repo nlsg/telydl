@@ -1,25 +1,17 @@
-from typing import Protocol, Awaitable, Callable, Iterable, Literal, Iterator
+from typing import Iterable, Iterator, Callable
 from pathlib import Path
 import asyncio
 import typing
 import logging
-from abc import ABC, abstractclassmethod
+from abc import ABC
+
+from telydl.downloaders.procotols import DownloadCallback, DownloadStatus
 
 if typing.TYPE_CHECKING:
     from yt_dlp import YoutubeDL
 _logger = logging.getLogger(__name__)
 
-type DownloadStatus = Literal["error", "success", "info"]
-type DownloadCallback = Callable[[DownloadStatus, str], Awaitable[None]]
 type InfoHook = Callable[[dict], dict | None] | None
-
-
-class DownloaderProtocol(Protocol):
-    base_directory: Path
-
-    async def download(
-        self, urls: list[str] | str, status_callback: DownloadCallback | None = None
-    ) -> list[Path | None]: ...
 
 
 class BaseDownloader(ABC):
@@ -41,7 +33,6 @@ class BaseDownloader(ABC):
         raise NotImplementedError
 
     @staticmethod
-    @abstractclassmethod
     def iter_infos(self, url_list: list[str]) -> Iterator[dict]:
         raise NotImplementedError
 

@@ -11,7 +11,7 @@ import dotenv
 import yt_dlp
 
 from telydl.bot import TelyDlBot
-from telydl.downloaders import Downloader
+from telydl.downloaders import YoutubeDownloader
 
 from telydl.util import setup_logging
 
@@ -75,7 +75,7 @@ async def tely_main():
     _logger.debug(f"{base_directory=} / {base_directory.exists()}")
 
     ydl = yt_dlp.YoutubeDL(ydl_opts)
-    downloader = Downloader(
+    downloader = YoutubeDownloader(
         ydl=ydl,
         base_directory=base_directory,
         info_hook=info_hook,

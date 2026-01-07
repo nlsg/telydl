@@ -31,8 +31,7 @@ from telegram.ext import (
 from telydl.util import run_shell, URL_REGEX
 
 if typing.TYPE_CHECKING:
-    from telegram.ext import Application
-    from telydl.downloaders.abstract import (
+    from telydl.downloaders.procotols import (
         DownloaderProtocol,
         DownloadStatus,
     )
