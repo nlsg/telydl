@@ -1,3 +1,3 @@
-from .youtube.downloader import YoutubeDownloader
+from telydl.downloaders.youtube.downloader import YoutubeDownloader
 
 __all__ = [YoutubeDownloader]
