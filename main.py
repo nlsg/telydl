@@ -11,7 +11,7 @@ import dotenv
 import yt_dlp
 
 from telydl.bot import TelyDlBot
-from telydl.downloaders import YoutubeDownloader
+from telydl.downloaders import YoutubeDownloader, Downloader
 
 from telydl.util import setup_logging
 
@@ -57,7 +57,6 @@ async def tely_main():
         raise ValueError(f"Unsupported mode: {mode}")
 
     ydl_opts = {
-        # Always start from best available source (usually Opus)
         "format": "bestaudio/best",
         # Behavior
         "quiet": True,
@@ -75,10 +74,13 @@ async def tely_main():
     _logger.debug(f"{base_directory=} / {base_directory.exists()}")
 
     ydl = yt_dlp.YoutubeDL(ydl_opts)
-    downloader = YoutubeDownloader(
+    yt_downloader = YoutubeDownloader(
         ydl=ydl,
         base_directory=base_directory,
         info_hook=info_hook,
+    )
+    downloader = Downloader(
+        base_directory=base_directory, youtube_downloader=yt_downloader
     )
     _logger.debug("initialized downloader")
     bot = TelyDlBot(
@@ -89,7 +91,7 @@ async def tely_main():
     _logger.debug("initialized TelyDlBot")
 
     loop = asyncio.get_running_loop()
-    downloader.set_loop(loop)
+    yt_downloader.set_loop(loop)
 
     await bot.start()
 

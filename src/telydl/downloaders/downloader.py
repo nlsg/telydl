@@ -5,7 +5,6 @@ from .procotols import DownloadCallback
 from .tidal.downloader import TidalDownloader
 from .youtube.downloader import YoutubeDownloader
 
-from .downloader import Downloader
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -19,7 +18,7 @@ class Downloader:
         youtube_downloader: YoutubeDownloader | None = None,
     ):
         self.tidal_downloader = tidal_downloader or TidalDownloader(
-            base_directory=base_directory
+            base_path=base_directory
         )
         self.youtube_downloader = youtube_downloader or YoutubeDownloader(
             base_directory=base_directory
@@ -45,6 +44,3 @@ class Downloader:
                 )[0]
             )
         return results_
-
-
-__all__ = [Downloader, YoutubeDownloader, TidalDownloader]
