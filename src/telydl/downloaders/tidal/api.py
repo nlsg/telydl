@@ -3,7 +3,7 @@ import base64
 import json
 from typing import Any, Dict, List, Optional, Callable
 from aiohttp import ClientSession, ClientTimeout
-from metadata import add_metadata_to_audio
+from .metadata import add_metadata_to_audio
 
 # Assuming equivalents from utils.py
 RATE_LIMIT_ERROR_MESSAGE = "Rate limit exceeded"
