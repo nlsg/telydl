@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
     from yt_dlp import YoutubeDL
 
 from telydl.downloaders.youtube.youtube import YtDlpDownloader
-from telydl.downloaders.youtube.spotify import TokelessSpotifyDownloader
+from telydl.downloaders.youtube.spotify import TokenlessSpotifyDownloader
 from telydl.downloaders.youtube.abstract import DownloadCallback, InfoHook
 
 _logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ class YoutubeDownloader:
         info_hook: InfoHook = None,
     ):
         self.base_directory = base_directory
-        self.spotify = TokelessSpotifyDownloader(
+        self.spotify = TokenlessSpotifyDownloader(
             ydl=ydl, base_directory=base_directory / "spotify", info_hook=info_hook
         )
         self.youtube = YtDlpDownloader(

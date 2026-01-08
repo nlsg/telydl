@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.DEBUG)
 
 
-class TokelessSpotifyDownloader(BaseYDLDownloader):
+class TokenlessSpotifyDownloader(BaseYDLDownloader):
     def _fetch_track_metadata(self, spotify_url: str) -> dict:
         """
         Fetch metadata for a Spotify track/album/playlist.
