@@ -16,7 +16,8 @@ _logger.setLevel(logging.DEBUG)
 
 
 class TokenlessSpotifyDownloader(BaseYDLDownloader):
-    def _fetch_track_metadata(self, spotify_url: str) -> dict:
+    @staticmethod
+    def fetch_track_metadata(spotify_url: str) -> dict:
         """
         Fetch metadata for a Spotify track/album/playlist.
         Only uses HTML scraping (no tokens needed).
@@ -47,7 +48,7 @@ class TokenlessSpotifyDownloader(BaseYDLDownloader):
     def iter_infos(self, url_list: list[str]):
         for url in url_list:
             try:
-                tracks = self._fetch_track_metadata(url)
+                tracks = self.fetch_track_metadata(url)
             except RuntimeError as e:
                 _logger.error(e)
                 continue
