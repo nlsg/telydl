@@ -2,6 +2,9 @@ import re
 import time
 import subprocess
 import logging
+import inspect
+from functools import wraps
+
 from logging.handlers import RotatingFileHandler
 
 URL_REGEX = re.compile(
@@ -49,3 +52,22 @@ def setup_logging(log_file: str | None = None):
 
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("telydl").setLevel(logging.DEBUG)
+
+
+def ensure_list(func):
+    if inspect.iscoroutinefunction(func):
+
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            result = await func(*args, **kwargs)
+            return result if isinstance(result, list) else [result]
+
+        return async_wrapper
+    else:
+
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            return result if isinstance(result, list) else [result]
+
+        return sync_wrapper
