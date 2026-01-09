@@ -1,12 +1,15 @@
 import io
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 from aiohttp import ClientSession, ClientTimeout
 
 from mutagen.flac import FLAC, Picture
 from mutagen.mp4 import MP4, MP4Cover
 
+if TYPE_CHECKING:
+    from telydl.downloaders.tidal.api import LosslessAPI
 
-async def get_cover_blob(api: Any, cover_id: str) -> Optional[bytes]:
+
+async def get_cover_blob(api: "LosslessAPI", cover_id: str) -> Optional[bytes]:
     """
     Fetch album artwork blob.
 
@@ -34,7 +37,7 @@ async def get_cover_blob(api: Any, cover_id: str) -> Optional[bytes]:
     return None
 
 
-def get_extension_for_quality(quality: str) -> str:
+def assume_extension_from_quality(quality: str) -> str:
     """
     Get file extension based on quality.
 
@@ -50,7 +53,10 @@ def get_extension_for_quality(quality: str) -> str:
 
 
 async def add_metadata_to_audio(
-    audio_data: bytes, track: Dict[str, Any], api: Any, quality: str
+    audio_data: bytes,
+    track: Dict[str, Any],
+    quality: str,
+    api: Optional["LosslessAPI"] = None,
 ) -> bytes:
     """
     Adds metadata tags to audio data (FLAC or M4A)
@@ -64,7 +70,7 @@ async def add_metadata_to_audio(
     Returns:
         Audio data with embedded metadata
     """
-    extension = get_extension_for_quality(quality)
+    extension = assume_extension_from_quality(quality)
 
     if extension == "flac":
         return await add_flac_metadata(audio_data, track, api)
@@ -75,7 +81,9 @@ async def add_metadata_to_audio(
     return audio_data
 
 
-async def add_flac_metadata(flac_data: bytes, track: Dict[str, Any], api: Any) -> bytes:
+async def add_flac_metadata(
+    flac_data: bytes, track: Dict[str, Any], api: Optional["LosslessAPI"]
+) -> bytes:
     """
     Adds Vorbis comment metadata to FLAC data
     """
@@ -118,7 +126,7 @@ async def add_flac_metadata(flac_data: bytes, track: Dict[str, Any], api: Any) -
         audio["ISRC"] = track["isrc"]
 
     # Add album artwork
-    if track.get("album", {}).get("cover"):
+    if track.get("album", {}).get("cover") and api:
         try:
             cover_data = await get_cover_blob(api, track["album"]["cover"])
             if cover_data:
@@ -137,7 +145,9 @@ async def add_flac_metadata(flac_data: bytes, track: Dict[str, Any], api: Any) -
     return buffer.read()
 
 
-async def add_m4a_metadata(data: bytes, track: Dict[str, Any], api: Any) -> bytes:
+async def add_m4a_metadata(
+    data: bytes, track: Dict[str, Any], api: Optional["LosslessAPI"]
+) -> bytes:
     """
     Adds metadata to M4A data using MP4 atoms
     """
@@ -178,7 +188,7 @@ async def add_m4a_metadata(data: bytes, track: Dict[str, Any], api: Any) -> byte
     audio.tags.update(tags)
 
     # Add album artwork
-    if track.get("album", {}).get("cover"):
+    if track.get("album", {}).get("cover") and api:
         try:
             cover_data = await get_cover_blob(api, track["album"]["cover"])
             if cover_data:
