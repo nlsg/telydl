@@ -30,7 +30,11 @@ class InfoValidationError(Exception):
 
 def info_hook(info: dict):
     title = info.get("fulltitle")
-    duration = info.get("duration") / 60
+    try:
+        duration = int(info.get("duration")) / 60
+    except ValueError:
+        _logger.error(f"cannot retreive duration from trackinfo: {info}")
+        return  # accept unparsable duration
     if not (2 < duration < 10):
         raise InfoValidationError(f"duration invalid: {title=}, {duration=}")
     return info
