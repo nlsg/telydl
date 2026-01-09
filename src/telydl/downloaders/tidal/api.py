@@ -103,9 +103,15 @@ class LosslessAPI:
     def findSearchSection(
         self, source: Any, key: str, visited: set
     ) -> Optional[Dict[str, Any]]:
-        if not source or not isinstance(source, dict):
+        if source is None:
             return None
 
+        obj_id = id(source)
+        if obj_id in visited:
+            return None
+        visited.add(obj_id)
+
+        # If it's a list, search each element
         if isinstance(source, list):
             for e in source:
                 f = self.findSearchSection(e, key, visited)
@@ -113,22 +119,27 @@ class LosslessAPI:
                     return f
             return None
 
-        if source in visited:
+        # If it's not a dict, stop
+        if not isinstance(source, dict):
             return None
-        visited.add(source)
 
+        # If this dict is the section we want
         if "items" in source and isinstance(source["items"], list):
             return source
 
+        # Prefer searching under the specific key
         if key in source:
             f = self.findSearchSection(source[key], key, visited)
             if f:
                 return f
 
+        # Otherwise search all values
         for v in source.values():
             f = self.findSearchSection(v, key, visited)
             if f:
                 return f
+
+        return None
 
     def buildSearchResponse(self, section: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         items = section.get("items", []) if section else []
@@ -723,7 +734,9 @@ class LosslessAPI:
                             onProgress(
                                 {"stage": "processing", "message": "Adding metadata..."}
                             )
-                        data = await add_metadata_to_audio(data, track, self, quality)
+                        data = await add_metadata_to_audio(
+                            audio_data=data, track=track, api=self, quality=quality
+                        )
 
                     # Inline triggerDownload: save to file
                     with open(filename, "wb") as f:
