@@ -4,6 +4,8 @@ from pathlib import Path
 type DownloadStatus = Literal["error", "success", "info"]
 type DownloadCallback = Callable[[DownloadStatus, str], Awaitable[None]]
 
+type InfoHook = Callable[[dict], dict | None] | None
+
 
 class DownloaderProtocol(Protocol):
     base_directory: Path

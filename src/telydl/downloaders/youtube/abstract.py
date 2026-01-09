@@ -1,17 +1,15 @@
-from typing import Iterable, Iterator, Callable
+from typing import Iterable, Iterator
 from pathlib import Path
 import asyncio
 import typing
 import logging
 from abc import ABC
 
-from telydl.downloaders.procotols import DownloadCallback, DownloadStatus
+from telydl.downloaders.procotols import DownloadCallback, DownloadStatus, InfoHook
 
 if typing.TYPE_CHECKING:
     from yt_dlp import YoutubeDL
 _logger = logging.getLogger(__name__)
-
-type InfoHook = Callable[[dict], dict | None] | None
 
 
 class BaseDownloader(ABC):
