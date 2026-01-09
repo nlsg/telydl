@@ -1,3 +1,4 @@
+from typing import Any, Optional, Dict
 import re
 import time
 import subprocess
@@ -71,3 +72,46 @@ def ensure_list(func):
             return result if isinstance(result, list) else [result]
 
         return sync_wrapper
+
+
+def locate_section(
+    source: Any, key: str, _visited: set | None = None
+) -> Optional[Dict[str, Any]]:
+    if not source:
+        return None
+    _visited = _visited or set()
+
+    obj_id = id(source)
+    if obj_id in _visited:
+        return None
+    _visited.add(obj_id)
+
+    # If it's a list, search each element
+    if isinstance(source, list):
+        for e in source:
+            f = locate_section(e, key, _visited)
+            if f:
+                return f
+        return None
+
+    # If it's not a dict, stop
+    if not isinstance(source, dict):
+        return None
+
+    # If this dict is the section we want
+    if "items" in source and isinstance(source["items"], list):
+        return source
+
+    # Prefer searching under the specific key
+    if key in source:
+        f = locate_section(source[key], key, _visited)
+        if f:
+            return f
+
+    # Otherwise search all values
+    for v in source.values():
+        f = locate_section(v, key, _visited)
+        if f:
+            return f
+
+    return None

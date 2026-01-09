@@ -3,6 +3,10 @@ import base64
 import json
 from typing import Any, Dict, List, Optional, Callable
 from aiohttp import ClientSession, ClientTimeout
+
+from telydl.util import locate_section
+
+
 from .metadata import add_metadata_to_audio
 
 # Assuming equivalents from utils.py
@@ -100,48 +104,8 @@ class LosslessAPI:
 
         raise lastError or ValueError(f"All API instances failed for: {relativePath}")
 
-    def findSearchSection(
-        self, source: Any, key: str, visited: set
-    ) -> Optional[Dict[str, Any]]:
-        if source is None:
-            return None
-
-        obj_id = id(source)
-        if obj_id in visited:
-            return None
-        visited.add(obj_id)
-
-        # If it's a list, search each element
-        if isinstance(source, list):
-            for e in source:
-                f = self.findSearchSection(e, key, visited)
-                if f:
-                    return f
-            return None
-
-        # If it's not a dict, stop
-        if not isinstance(source, dict):
-            return None
-
-        # If this dict is the section we want
-        if "items" in source and isinstance(source["items"], list):
-            return source
-
-        # Prefer searching under the specific key
-        if key in source:
-            f = self.findSearchSection(source[key], key, visited)
-            if f:
-                return f
-
-        # Otherwise search all values
-        for v in source.values():
-            f = self.findSearchSection(v, key, visited)
-            if f:
-                return f
-
-        return None
-
-    def buildSearchResponse(self, section: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def normalizeSearchResponse(self, data: Dict[str, Any], key: str) -> Dict[str, Any]:
+        section = locate_section(data, key)
         items = section.get("items", []) if section else []
         return {
             "items": items,
@@ -151,10 +115,6 @@ class LosslessAPI:
             if section
             else len(items),
         }
-
-    def normalizeSearchResponse(self, data: Dict[str, Any], key: str) -> Dict[str, Any]:
-        section = self.findSearchSection(data, key, set())
-        return self.buildSearchResponse(section)
 
     def prepareTrack(self, track: Dict[str, Any]) -> Dict[str, Any]:
         normalized = track.copy()
