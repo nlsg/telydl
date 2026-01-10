@@ -48,6 +48,7 @@ class TidalDownloader:
         info_hook: InfoHook | None = None,
     ):
         self.base_directory = base_directory
+        self.base_directory.mkdir(exist_ok=True)
         self.info_hook = info_hook
         self.api = LosslessAPI()
 
@@ -129,6 +130,9 @@ class TidalDownloader:
         return f"{track.get('artist', {}).get('name')} - {track.get('title')} [{track.get('id')}] ({track.get('duration', 0) / 60:.2f}min)"
 
     async def download_track(self, track: Track, filename: str | None = None) -> Path:
+        if self.info_hook:
+            track = self.info_hook(track) or track
+
         quality = track.get("audioQuality")
         data = await self.api.downloadTrack(
             id=track.get("id"),
@@ -162,9 +166,6 @@ class TidalDownloader:
             path = None
             for track in await self.fetch_tracks_from_any_url(url):
                 try:
-                    if self.info_hook:
-                        track = self.info_hook(track) or track
-
                     path = await self.download_track(track)
                     await status_callback("success", f"download complete: {path}")
                 except Exception as e:
