@@ -2,6 +2,7 @@ import asyncio
 import signal
 import os
 import logging
+import shutil
 
 from pathlib import Path
 
@@ -11,8 +12,10 @@ import dotenv
 import yt_dlp
 
 from telydl.bot import TelyDlBot
-from telydl.downloaders import YoutubeDownloader, Downloader
+from telydl.downloaders import YoutubeDownloader, Downloader, TidalDownloader
 
+from telydl.downloaders.procotols import InfoValidationError
+from telydl.types import Track, RawTrack
 from telydl.util import setup_logging
 
 setup_logging()
@@ -24,19 +27,21 @@ _logger.debug("starting application...")
 dotenv.load_dotenv()
 
 
-class InfoValidationError(Exception):
-    pass
+count = 0
 
 
-def info_hook(info: dict):
-    title = info.get("fulltitle")
+def info_hook(info: Track | RawTrack):
+    global count
     try:
         duration = int(info.get("duration")) / 60
     except ValueError:
-        _logger.error(f"cannot retreive duration from trackinfo: {info}")
-        raise InfoValidationError(f"cannot retrieve duration: {title=}, {duration=}")
+        raise InfoValidationError("cannot retrieve duration")
     if not (2 < duration < 10):
-        raise InfoValidationError(f"duration invalid: {title=}, {duration=}")
+        raise InfoValidationError("duration invalid")
+    count += 1
+    if count % 10:
+        if (free_gb := shutil.disk_usage("/").free / 1000**3) < 10:
+            raise RuntimeError(f"out off space: {free_gb}")
     return info
 
 
@@ -83,8 +88,13 @@ async def tely_main():
         base_directory=base_directory,
         info_hook=info_hook,
     )
+    tidal_downloader = TidalDownloader(
+        base_directory=base_directory, info_hook=info_hook
+    )
     downloader = Downloader(
-        base_directory=base_directory, youtube_downloader=yt_downloader
+        base_directory=base_directory,
+        youtube_downloader=yt_downloader,
+        tidal_downloader=tidal_downloader,
     )
     _logger.debug("initialized downloader")
     bot = TelyDlBot(

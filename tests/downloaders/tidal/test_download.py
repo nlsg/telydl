@@ -12,7 +12,7 @@ HI_RESS_LOSSLESS_TRACKS = [
 
 
 @pytest.mark.asyncio
-async def test_download_hi_ress_lossless_track_from_tidal_link(
+async def test_download_lossless_track_from_tidal_link(
     downloader: TidalDownloader,
 ):
     await downloader.download(LOSSLESS_TRACKS)

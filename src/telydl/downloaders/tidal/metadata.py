@@ -6,6 +6,8 @@ from aiohttp import ClientSession, ClientTimeout
 from mutagen.flac import FLAC, Picture
 from mutagen.mp4 import MP4, MP4Cover
 
+from telydl.types import Track
+
 if TYPE_CHECKING:
     from telydl.downloaders.tidal.api import LosslessAPI
 
@@ -57,7 +59,7 @@ def assume_extension_from_quality(quality: str) -> str:
 
 async def add_metadata_to_audio(
     audio_data: bytes,
-    track: Dict[str, Any],
+    track: Track,
     quality: str,
     api: Optional["LosslessAPI"] = None,
     genre: str | None = None,
@@ -79,10 +81,10 @@ async def add_metadata_to_audio(
 
     if extension == "flac":
         return await add_flac_metadata(
-            audio_data, track, api, genre=genre, comments=comments
+            audio_data, track._raw, api, genre=genre, comments=comments
         )
     elif extension == "m4a":
-        return await add_m4a_metadata(audio_data, track, api)
+        return await add_m4a_metadata(audio_data, track._raw, api)
 
     _logger.warning(f"{extension} is not supported")
     return audio_data
@@ -110,6 +112,10 @@ async def add_flac_metadata(
         mix = track.get("version", "Original Mix")
         audio["TITLE"] = f"{x} ({mix})"
     if x := track.get("artist", {}).get("name"):
+        try:
+            x = ",".join(a.get("name") for a in track.get("artists", []))
+        except Exception:
+            pass
         audio["ARTIST"] = x
     if x := track.get("album", {}).get("title"):
         audio["ALBUM"] = x

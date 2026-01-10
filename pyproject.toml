@@ -10,9 +10,11 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aiohttp>=3.13.3",
+    "aiosqlite>=0.22.1",
     "python-dotenv>=1.2.1",
     "python-telegram-bot>=22.5",
     "spotdl>=4.4.3",
+    "sqlalchemy>=2.0.45",
 ]
 
 [tool.setuptools]

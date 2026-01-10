@@ -16,3 +16,5 @@ wheels/
 sample_track.json
 sample_album.json
 sample_artist.json
+
+*.db

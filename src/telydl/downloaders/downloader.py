@@ -27,6 +27,10 @@ class Downloader:
     async def download(
         self, urls: list[str] | str, status_callback: DownloadCallback | None = None
     ) -> list[Path | None]:
+        if isinstance(urls, str):
+            urls = [
+                urls,
+            ]
         results = await self.tidal_downloader.download(
             urls=urls, status_callback=status_callback
         )
@@ -40,9 +44,8 @@ class Downloader:
             if result:
                 results_.append(result)
                 continue
-            results_.append(
-                await self.youtube_downloader.download(
-                    url, status_callback=status_callback
-                )[0]
+            res = await self.youtube_downloader.download(
+                url, status_callback=status_callback
             )
+            results_.append(res[0])
         return results_

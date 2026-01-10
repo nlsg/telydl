@@ -7,6 +7,17 @@ type DownloadCallback = Callable[[DownloadStatus, str], Awaitable[None]]
 type InfoHook = Callable[[dict], dict | None] | None
 
 
+class DuplicationError(Exception):
+    pass
+
+
+class InfoValidationError(Exception):
+    pass
+
+
+errors = (InfoValidationError, DuplicationError)
+
+
 class DownloaderProtocol(Protocol):
     base_directory: Path
 

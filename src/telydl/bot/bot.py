@@ -28,6 +28,7 @@ from telegram.ext import (
     filters,
 )
 
+from telydl.database import DBService
 from telydl.util import run_shell, URL_REGEX
 
 if typing.TYPE_CHECKING:
@@ -43,12 +44,17 @@ type CommandPredicate = callable[[Update, ContextTypes.DEFAULT_TYPE], bool]
 
 class TelyDlBot:
     def __init__(
-        self, token: str, downloader: "DownloaderProtocol", whitelist: list[int]
+        self,
+        token: str,
+        downloader: "DownloaderProtocol",
+        whitelist: list[int],
+        DBService=DBService,
     ):
         self.app: Application = ApplicationBuilder().token(token).build()
         self.downloader = downloader
         self._started = False
         self.whitelist = whitelist
+        self.DBService = DBService
 
     async def start(self):
         if self._started:
@@ -167,9 +173,9 @@ class TelyDlBot:
         return re.findall(URL_REGEX, message.text) or None
 
     def is_authorized(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
-        return update.effective_user.id in self.whitelist or _logger.warning(
-            f"unauthorized user: {update.effective_user}"
-        )
+        auth = update.effective_user.id in self.whitelist
+        auth or _logger.warning(f"unauthorized user: {update.effective_user}")
+        return auth
 
     # handlers
 

@@ -1,5 +1,5 @@
-from typing import Any, Literal
 from pathlib import Path
+import inspect
 import re
 import logging
 import asyncio
@@ -8,14 +8,19 @@ import asyncio
 import yt_dlp
 
 from telydl.util import ensure_list
+from telydl.types import Track, RawTrack
+from telydl.database import DBService
 
-from ..procotols import DownloadCallback, InfoHook
+from ..procotols import (
+    DownloadCallback,
+    InfoHook,
+    DuplicationError,
+    InfoValidationError,
+)
 from ..youtube.spotify import TokenlessSpotifyDownloader
 from .api import LosslessAPI
 from .metadata import assume_extension_from_quality, add_metadata_to_audio
 
-type Track = dict[str, Any]
-type Quality = Literal["HI_RES_LOSSLESS", "LOSSLESS", "HIGH", "LOW"]
 
 _logger = logging.getLogger(__name__)
 
@@ -46,20 +51,23 @@ class TidalDownloader:
         self,
         base_directory: Path = Path("."),
         info_hook: InfoHook | None = None,
+        DBService: type[DBService] = DBService,
     ):
         self.base_directory = base_directory
         self.base_directory.mkdir(exist_ok=True)
         self.info_hook = info_hook
         self.api = LosslessAPI()
+        self.DBService = DBService
 
     @ensure_list
     async def fetch_tracks_from_any_url(self, url: str) -> list[Track]:
         ## tidal ##
         if m := re.match(r"https://tidal.com/track/([^/]*)", url):
-            return await self.api.getTrackInfo(m.group(1))
+            raw_track = await self.api.getTrackInfo(m.group(1))
+            return Track.from_tidal(raw_track)
         elif m := re.match(r"https://tidal.com/album/([^/]*)", url):
             album = await self.api.getAlbum(m.group(1))
-            return album.get("tracks")
+            return [Track.from_tidal(track) for track in album.get("tracks")]
 
         ## spotify ##
         elif m := re.match(r"https://(open)?.spotify.com/track/([^/]*)", url):
@@ -87,7 +95,7 @@ class TidalDownloader:
             ]
             id = items[0].get("id")
             album = await self.api.getAlbum(id)
-            return album.get("tracks")
+            return [Track.from_tidal(track) for track in album.get("tracks")]
 
         ## youtube ##
         elif m := re.match(r"https://www.youtube.com/watch\?v=([^&]*)", url):
@@ -118,10 +126,12 @@ class TidalDownloader:
             )
             and item.get("title").lower() in title.lower()
         ]
-        return items[0]
+        return Track.from_tidal(items[0]) if items else None
 
     @staticmethod
-    def fmt(track: Track) -> str:
+    def fmt(track: Track | RawTrack) -> str:
+        if isinstance(track, Track):
+            return str(track)
         album = artist = track
         if track.get("type") == "ARTIST":
             return f"{artist.get('name')} [{artist.get('id')}] popularity={artist.get('popularity')}"
@@ -129,18 +139,26 @@ class TidalDownloader:
             return f"{album.get('title')} [{artist.get('id')}] copyright={album.get('copyright')} tracks={album.get('numberofTracks')}"
         return f"{track.get('artist', {}).get('name')} - {track.get('title')} [{track.get('id')}] ({track.get('duration', 0) / 60:.2f}min)"
 
-    async def download_track(self, track: Track, filename: str | None = None) -> Path:
+    async def download_track(
+        self, track: Track, filename: str | None = None, user: int | str | None = None
+    ) -> Path:
         if self.info_hook:
-            track = self.info_hook(track) or track
+            if inspect.iscoroutinefunction(self.info_hook):
+                track = (await self.info_hook(track)) or track
+            else:
+                track = self.info_hook(track) or track
 
-        quality = track.get("audioQuality")
+        quality = track._raw.get("audioQuality")
         data = await self.api.downloadTrack(
-            id=track.get("id"),
+            id=track.id,
             quality=quality,
         )
+        async with self.DBService() as db:
+            if await db.get_track(track.id):
+                raise DuplicationError(f"track alredy exists: {track}")
 
         filename = self.base_directory / (
-            filename or f"{self.fmt(track)}.{assume_extension_from_quality(quality)}"
+            filename or f"{track.filename}.{assume_extension_from_quality(quality)}"
         )
 
         try:
@@ -152,10 +170,16 @@ class TidalDownloader:
 
         with open(filename, "wb") as f:
             f.write(data)
+
+        async with self.DBService() as db:
+            await db.add_track(track, user)
         return filename
 
     async def download(
-        self, urls: list[str] | str, status_callback: DownloadCallback | None = None
+        self,
+        urls: list[str] | str,
+        status_callback: DownloadCallback | None = None,
+        user: int | str | None = None,
     ) -> list[Path | None]:
         if isinstance(urls, str):
             urls = [
@@ -167,13 +191,17 @@ class TidalDownloader:
             path = None
             for track in await self.fetch_tracks_from_any_url(url):
                 try:
-                    path = await self.download_track(track)
-                    await status_callback("success", f"download complete: {path}")
+                    path = await self.download_track(track, user=user)
+                    await status_callback(
+                        "success", f"download complete: \n{path=}\ntrack={track}"
+                    )  # nono {track=}
                 except Exception as e:
                     await status_callback(
-                        "error", f"error downloading track: {self.fmt(track)}"
+                        "error", f"download failed \n{e=}\ntrack={track}"
                     )
-                    _logger.error(f"download failed {self.fmt(track)}: {e}")
+                    _logger.error(f"download failed {e=} / track={track}")
+                    if isinstance(e, (InfoValidationError, DuplicationError)):
+                        path = True  # do not trigger secondary download by youtube-dl
                     continue
             # TODO some resulting paths might be skipped, though its more important, that size of urls and results are equal
             res.append(path)

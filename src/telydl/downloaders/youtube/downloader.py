@@ -23,10 +23,10 @@ class YoutubeDownloader:
     ):
         self.base_directory = base_directory
         self.spotify = TokenlessSpotifyDownloader(
-            ydl=ydl, base_directory=base_directory / "spotify", info_hook=info_hook
+            ydl=ydl, base_directory=base_directory, info_hook=info_hook
         )
         self.youtube = YtDlpDownloader(
-            ydl=ydl, base_directory=base_directory / "youtube", info_hook=info_hook
+            ydl=ydl, base_directory=base_directory, info_hook=info_hook
         )
 
     def set_loop(self, loop):

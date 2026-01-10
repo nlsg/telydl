@@ -55,6 +55,7 @@ def setup_logging(log_file: str | None = None):
         _logger.addHandler(file_handler)
 
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("aiosqlite").setLevel(logging.INFO)
     logging.getLogger("telydl").setLevel(logging.DEBUG)
 
 
@@ -141,3 +142,7 @@ def locate_section(
             return f
 
     return None
+
+
+def sanitize_filename(name: str) -> str:
+    return re.sub(r'[\\/:"*?<>|]+', "_", name)
