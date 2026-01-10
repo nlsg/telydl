@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, Literal
 from pathlib import Path
 import re
 import logging
+import asyncio
 
 
 import yt_dlp
@@ -11,8 +12,10 @@ from telydl.util import ensure_list
 from ..procotols import DownloadCallback, InfoHook
 from ..youtube.spotify import TokenlessSpotifyDownloader
 from .api import LosslessAPI
+from .metadata import assume_extension_from_quality, add_metadata_to_audio
 
 type Track = dict[str, Any]
+type Quality = Literal["HI_RES_LOSSLESS", "LOSSLESS", "HIGH", "LOW"]
 
 _logger = logging.getLogger(__name__)
 
@@ -39,11 +42,13 @@ def fetch_artist_and_title_from_youtube(url: str) -> tuple[str, str]:
 
 
 class TidalDownloader:
-    QUALITIES = ("HI_RES_LOSSLESS", "LOSSLESS", "HIGH", "LOW")
-
-    def __init__(self, base_directory: Path, info_hook: InfoHook | None = None):
+    def __init__(
+        self,
+        base_directory: Path,
+        info_hook: InfoHook | None = None,
+    ):
         self.base_directory = base_directory
-        self.info_hook = InfoHook
+        self.info_hook = info_hook
         self.api = LosslessAPI()
 
     @ensure_list
@@ -114,15 +119,35 @@ class TidalDownloader:
         ]
         return items[0]
 
+    @staticmethod
+    def fmt(track: Track) -> str:
+        album = artist = track
+        if track.get("type") == "ARTIST":
+            return f"{artist.get('name')} [{artist.get('id')}] popularity={artist.get('popularity')}"
+        if track.get("type") == "ALBUM":
+            return f"{album.get('title')} [{artist.get('id')}] copyright={album.get('copyright')} tracks={album.get('numberofTracks')}"
+        return f"{track.get('artist', {}).get('name')} - {track.get('title')} [{track.get('id')}] ({track.get('duration', 0):.2f}min)"
+
     async def download_track(self, track: Track, filename: str | None = None) -> Path:
-        for quality in self.QUALITIES:
-            try:
-                await self.api.downloadTrack(
-                    id=track.get("id"), track=track, quality=quality
-                )
-            except Exception:
-                pass
-        pass
+        quality = track.get("audioQuality")
+        data = await self.api.downloadTrack(
+            id=track.get("id"),
+            quality=quality,
+        )
+
+        filename = filename or Path(
+            f"downloads/{self.fmt(track)}.{assume_extension_from_quality(quality)}"
+        )
+        try:
+            data = await add_metadata_to_audio(
+                audio_data=data, track=track, api=self.api, quality=quality
+            )
+        except Exception as e:
+            _logger.info(f"failed to add metadata track={self.fmt(track)}: {e}")
+
+        with open(filename, "wb") as f:
+            f.write(data)
+        return filename
 
     async def download(
         self, urls: list[str] | str, status_callback: DownloadCallback | None = None
@@ -131,19 +156,24 @@ class TidalDownloader:
             urls = [
                 urls,
             ]
+        status_callback = status_callback or (lambda _, __: asyncio.sleep(0))
         res = []
         for url in urls:
-            for track in (tracks := await self.fetch_tracks_from_any_url(url)):
+            path = None
+            for track in await self.fetch_tracks_from_any_url(url):
                 try:
                     if self.info_hook:
                         track = self.info_hook(track) or track
 
                     path = await self.download_track(track)
                     await status_callback("success", f"download complete: {path}")
-                except Exception:
-                    await status_callback("error", f"error downloading track: {track}")
-                    pass
-                # TODO some resulting paths might be skipped, though its more important, that size of urls and results are equal
+                except Exception as e:
+                    await status_callback(
+                        "error", f"error downloading track: {self.fmt(track)}"
+                    )
+                    _logger.error(f"download failed {self.fmt(track)}: {e}")
+                    continue
+            # TODO some resulting paths might be skipped, though its more important, that size of urls and results are equal
             res.append(path)
 
         return res
