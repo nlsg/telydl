@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+set -x
+echo "hook run finally" >> /opt/telydl/info.txt 
+sudo /bin/systemctl restart telydl.service
+echo "hook succeded finally" >> /opt/telydl/info.txt 
