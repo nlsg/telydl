@@ -30,9 +30,11 @@ class Downloader:
         results = await self.tidal_downloader.download(
             urls=urls, status_callback=status_callback
         )
+
         if all(results):
-            _logger.info("complete success!")
+            _logger.info("complete tidal success!")
             return results
+
         results_ = []
         for result, url in zip(results, urls):
             if result:

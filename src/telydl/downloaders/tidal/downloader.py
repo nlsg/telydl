@@ -44,7 +44,7 @@ def fetch_artist_and_title_from_youtube(url: str) -> tuple[str, str]:
 class TidalDownloader:
     def __init__(
         self,
-        base_directory: Path,
+        base_directory: Path = Path("."),
         info_hook: InfoHook | None = None,
     ):
         self.base_directory = base_directory
