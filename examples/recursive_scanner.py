@@ -15,6 +15,8 @@ class InfoValidationError(Exception):
 
 count = 0
 
+setup_logging("recursivescanner.log")
+
 
 def info_hook(info: dict):
     global count
@@ -36,9 +38,9 @@ def info_hook(info: dict):
 dl = TidalDownloader(Path("/home/nils/Music/tracks"), info_hook=info_hook)
 api = dl.api
 
-setup_logging(__name__ + ".log")
 
 _logger = logging.getLogger(__name__)
+logging.getLogger().setLevel(logging.DEBUG)
 
 
 async def download_albums_recursive(

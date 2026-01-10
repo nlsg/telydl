@@ -139,9 +139,10 @@ class TidalDownloader:
             quality=quality,
         )
 
-        filename = filename or Path(
-            f"downloads/{self.fmt(track)}.{assume_extension_from_quality(quality)}"
+        filename = self.base_directory / (
+            filename or f"{self.fmt(track)}.{assume_extension_from_quality(quality)}"
         )
+
         try:
             data = await add_metadata_to_audio(
                 audio_data=data, track=track, api=self.api, quality=quality
