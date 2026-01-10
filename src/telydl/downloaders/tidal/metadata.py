@@ -1,4 +1,5 @@
 import io
+import logging
 from typing import Any, Dict, Optional, TYPE_CHECKING
 from aiohttp import ClientSession, ClientTimeout
 
@@ -7,6 +8,8 @@ from mutagen.mp4 import MP4, MP4Cover
 
 if TYPE_CHECKING:
     from telydl.downloaders.tidal.api import LosslessAPI
+
+_logger = logging.getLogger(__name__)
 
 
 async def get_cover_blob(api: "LosslessAPI", cover_id: str) -> Optional[bytes]:
@@ -57,6 +60,8 @@ async def add_metadata_to_audio(
     track: Dict[str, Any],
     quality: str,
     api: Optional["LosslessAPI"] = None,
+    genre: str | None = None,
+    comments: list[str] | str | None = None,
 ) -> bytes:
     """
     Adds metadata tags to audio data (FLAC or M4A)
@@ -73,16 +78,22 @@ async def add_metadata_to_audio(
     extension = assume_extension_from_quality(quality)
 
     if extension == "flac":
-        return await add_flac_metadata(audio_data, track, api)
+        return await add_flac_metadata(
+            audio_data, track, api, genre=genre, comments=comments
+        )
     elif extension == "m4a":
         return await add_m4a_metadata(audio_data, track, api)
 
-    # Unsupported format, return original
+    _logger.warning(f"{extension} is not supported")
     return audio_data
 
 
 async def add_flac_metadata(
-    flac_data: bytes, track: Dict[str, Any], api: Optional["LosslessAPI"]
+    flac_data: bytes,
+    track: Dict[str, Any],
+    api: Optional["LosslessAPI"],
+    genre: str | None = None,
+    comments: list[str] | None = None,
 ) -> bytes:
     """
     Adds Vorbis comment metadata to FLAC data
@@ -95,19 +106,36 @@ async def add_flac_metadata(
     audio.clear()
 
     # Add standard tags
-    if track.get("title"):
-        audio["TITLE"] = track["title"]
-    if track.get("artist", {}).get("name"):
-        audio["ARTIST"] = track["artist"]["name"]
-    if track.get("album", {}).get("title"):
-        audio["ALBUM"] = track["album"]["title"]
-    if track.get("album", {}).get("artist", {}).get("name"):
-        audio["ALBUMARTIST"] = track["album"]["artist"]["name"]
-    if track.get("trackNumber"):
-        audio["TRACKNUMBER"] = str(track["trackNumber"])
-    if track.get("album", {}).get("numberOfTracks"):
-        audio["TRACKTOTAL"] = str(track["album"]["numberOfTracks"])
+    if x := track.get("title"):
+        mix = track.get("version", "Original Mix")
+        audio["TITLE"] = f"{x} ({mix})"
+    if x := track.get("artist", {}).get("name"):
+        audio["ARTIST"] = x
+    if x := track.get("album", {}).get("title"):
+        audio["ALBUM"] = x
+    if x := track.get("album", {}).get("artist", {}).get("name"):
+        audio["ALBUMARTIST"] = x
+    if x := track.get("trackNumber"):
+        audio["TRACKNUMBER"] = str(x)
+    if x := track.get("album", {}).get("numberOfTracks"):
+        audio["TRACKTOTAL"] = str(x)
+    if x := track.get("bmp"):
+        audio["BPM"] = x
+    if (x := track.get("key")) and (x_ := track.get("keyScale")):
+        audio["KEY"] = f"{x} {x_}"
+    if x := track.get("version"):
+        audio["VERSION"] = x
+    if x := track.get("replayGain"):
+        audio["REPLAYGAIN_TRACK_GAIN"] = str(x)
+    if x := track.get("peak"):
+        audio["REPLAYGAIN_TRACK_PEAK"] = str(x)
 
+    if genre:
+        audio["GENRE"] = genre
+    if comments:
+        audio["COMMENT"] = ([comments] if isinstance(comments, str) else comments) + [
+            f"tidal-id: {track.get('id')}",
+        ]
     release_date_str = track.get("album", {}).get("releaseDate") or (
         track.get("streamStartDate", "").split("T")[0]
         if track.get("streamStartDate")
@@ -124,12 +152,11 @@ async def add_flac_metadata(
         audio["COPYRIGHT"] = track["copyright"]
     if track.get("isrc"):
         audio["ISRC"] = track["isrc"]
-
+    audio.add_vorbiscomment
     # Add album artwork
     if track.get("album", {}).get("cover") and api:
         try:
-            cover_data = await get_cover_blob(api, track["album"]["cover"])
-            if cover_data:
+            if cover_data := await get_cover_blob(api, track["album"]["cover"]):
                 picture = Picture()
                 picture.type = 3  # Front cover
                 picture.mime = "image/jpeg"  # Default, could detect
