@@ -15,4 +15,4 @@ HI_RESS_LOSSLESS_TRACKS = [
 async def test_download_hi_ress_lossless_track_from_tidal_link(
     downloader: TidalDownloader,
 ):
-    paths = await downloader.download(HI_RESS_LOSSLESS_TRACKS[0])
+    await downloader.download(LOSSLESS_TRACKS)
