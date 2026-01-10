@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import shutil
 from pathlib import Path
 
 
@@ -12,7 +13,11 @@ class InfoValidationError(Exception):
     pass
 
 
+count = 0
+
+
 def info_hook(info: dict):
+    global count
     title = info.get("fulltitle")
     try:
         duration = int(info.get("duration")) / 60
@@ -21,10 +26,14 @@ def info_hook(info: dict):
         raise InfoValidationError(f"cannot retrieve duration: {title=}, {duration=}")
     if not (2 < duration < 10):
         raise InfoValidationError(f"duration invalid: {title=}, {duration=}")
+    count += 1
+    if count % 10:
+        if (free_gb := shutil.disk_usage("/").free / 1000**3) < 10:
+            raise RuntimeError("out off space")
     return info
 
 
-dl = TidalDownloader(Path("downloads"), info_hook=info_hook)
+dl = TidalDownloader(Path("/home/nils/Music/tracks"), info_hook=info_hook)
 api = dl.api
 
 setup_logging(__name__ + ".log")
@@ -44,8 +53,11 @@ async def download_albums_recursive(
 
     _logger.info(f" R:{dl.fmt(album.get('album'))}")
     for track in album.get("tracks"):
-        # path = await dl.download_track(track=track)
-        path = None
+        try:
+            path = await dl.download_track(track=track)
+        except Exception as e:
+            _logger.info(f"failed to doenload {dl.fmt(track)}: {e}")
+            continue
         _logger.info(f"  T: {dl.fmt(track)} | {path}")
 
     for a, _ in zip(
