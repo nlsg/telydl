@@ -43,8 +43,8 @@ _logger = logging.getLogger(__name__)
 
 async def download_albums_recursive(
     album: dict,
-    depth=3,
-    limit=3,
+    depth=5,
+    limit=5,
     visited=set(),
     __recursion_counter=0,
 ):
@@ -73,8 +73,8 @@ async def download_albums_recursive(
 
 async def download_artists_recursive(
     artist: dict,
-    depth=3,
-    limit=3,
+    depth=5,
+    limit=5,
     visited=set(),
     __recursion_counter=0,
 ):
