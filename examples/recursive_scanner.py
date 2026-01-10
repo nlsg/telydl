@@ -44,7 +44,7 @@ async def download_albums_recursive(
 
     _logger.info(f" R:{dl.fmt(album.get('album'))}")
     for track in album.get("tracks"):
-        path = await dl.download_track(track=track)
+        # path = await dl.download_track(track=track)
         path = None
         _logger.info(f"  T: {dl.fmt(track)} | {path}")
 
@@ -73,7 +73,6 @@ async def download_artists_recursive(
     for album in artist.get("albums"):
         await download_albums_recursive(
             album=await api.getAlbum(album.get("id")),
-            api=api,
             depth=depth,
             limit=limit,
             visited=visited,
@@ -92,7 +91,7 @@ async def main():
     artists = await dl.api.searchArtists("landhouse")
     first_id = artists.get("items")[0].get("id")
     artist = await dl.api.getArtist(first_id)
-    await download_artists_recursive(artist, api=dl.api)
+    await download_artists_recursive(artist)
 
 
 if __name__ == "__main__":
