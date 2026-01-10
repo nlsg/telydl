@@ -4,9 +4,11 @@ import time
 import subprocess
 import logging
 import inspect
-from functools import wraps
+import functools
 
 from logging.handlers import RotatingFileHandler
+
+_logger = logging.getLogger(__name__)
 
 URL_REGEX = re.compile(
     r"https?://[^\s<>\"]+",
@@ -58,7 +60,7 @@ def setup_logging(log_file: str | None = None):
 def ensure_list(func):
     if inspect.iscoroutinefunction(func):
 
-        @wraps(func)
+        @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
             result = await func(*args, **kwargs)
             return result if isinstance(result, list) else [result]
@@ -66,12 +68,35 @@ def ensure_list(func):
         return async_wrapper
     else:
 
-        @wraps(func)
+        @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
             return result if isinstance(result, list) else [result]
 
         return sync_wrapper
+
+
+def retry_on_exception(exception, retries=None, delay=1):
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            i = 0
+            while True:
+                i += 2
+                try:
+                    return await func(*args, **kwargs)
+                except exception as e:
+                    _logger.warning(
+                        f"rate limit hit.. {i}/{retries * 2}: {func.__name__}({args=}, {kwargs=})"
+                    )
+                    if retries and i > (retries / 2):
+                        _logger.warning("definitely rate limit hit, giving up")
+                        raise e
+                    await asyncio.sleep(i)
+
+        return wrapper
+
+    return decorator
 
 
 def locate_section(
