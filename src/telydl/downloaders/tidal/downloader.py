@@ -126,7 +126,7 @@ class TidalDownloader:
             return f"{artist.get('name')} [{artist.get('id')}] popularity={artist.get('popularity')}"
         if track.get("type") == "ALBUM":
             return f"{album.get('title')} [{artist.get('id')}] copyright={album.get('copyright')} tracks={album.get('numberofTracks')}"
-        return f"{track.get('artist', {}).get('name')} - {track.get('title')} [{track.get('id')}] ({track.get('duration', 0):.2f}min)"
+        return f"{track.get('artist', {}).get('name')} - {track.get('title')} [{track.get('id')}] ({track.get('duration', 0) / 60:.2f}min)"
 
     async def download_track(self, track: Track, filename: str | None = None) -> Path:
         quality = track.get("audioQuality")
