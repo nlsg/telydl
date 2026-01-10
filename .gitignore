@@ -13,3 +13,6 @@ wheels/
 /downloads
 
 *.log
+sample_track.json
+sample_album.json
+sample_artist.json
