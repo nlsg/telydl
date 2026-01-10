@@ -1,15 +1,20 @@
 import asyncio
 import base64
 import json
+import logging
 from typing import Any, Dict, List, Optional, Callable
 from aiohttp import ClientSession, ClientTimeout
 
-from telydl.util import locate_section
+from telydl.util import locate_section, retry_on_exception
 
+_logger = logging.getLogger(__name__)
 
-from .metadata import add_metadata_to_audio
 
 # Assuming equivalents from utils.py
+class RateLimitHit(Exception):
+    pass
+
+
 RATE_LIMIT_ERROR_MESSAGE = "Rate limit exceeded"
 
 
@@ -42,6 +47,7 @@ class LosslessAPI:
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or Settings()
 
+    @retry_on_exception(RateLimitHit)
     async def fetchWithRetry(
         self, relativePath: str, options: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
@@ -67,7 +73,7 @@ class LosslessAPI:
                     try:
                         async with session.get(url) as response:
                             if response.status == 429:
-                                raise ValueError(RATE_LIMIT_ERROR_MESSAGE)
+                                raise RateLimitHit(RATE_LIMIT_ERROR_MESSAGE)
 
                             if response.ok:
                                 return await response.json()
@@ -202,7 +208,7 @@ class LosslessAPI:
         unique = {}
 
         for album in albums:
-            key = json.dumps([album.get("title"), album.get("numberOfTracks", 0)])
+            key = f"{album.get('title')}{album.get('numberOfTracks', 0)}"
 
             if key in unique:
                 existing = unique[key]
@@ -513,9 +519,13 @@ class LosslessAPI:
         def scan(value, visited=None):
             if visited is None:
                 visited = set()
-            if not value or not isinstance(value, (dict, list)) or value in visited:
+            if (
+                not value
+                or not isinstance(value, (dict, list))
+                or str(value) in visited
+            ):
                 return
-            visited.add(value)
+            visited.add(str(value))
 
             if isinstance(value, list):
                 for item in value:
@@ -650,11 +660,9 @@ class LosslessAPI:
     async def downloadTrack(
         self,
         id: str,
-        filename: str = "",
         quality: str = "LOSSLESS",
         onProgress: Callable | None = None,
-        track: dict[str, Any] | None = None,
-    ) -> None:
+    ) -> bytes:
         try:
             lookup = await self.getTrackStreamInfo(id, quality)
             streamUrl = lookup.get(
@@ -686,21 +694,9 @@ class LosslessAPI:
                                     "totalBytes": totalBytes or None,
                                 }
                             )
+                        return data
                     else:
-                        data = await response.read()
-
-                    if track:
-                        if onProgress:
-                            onProgress(
-                                {"stage": "processing", "message": "Adding metadata..."}
-                            )
-                        data = await add_metadata_to_audio(
-                            audio_data=data, track=track, api=self, quality=quality
-                        )
-
-                    # Inline triggerDownload: save to file
-                    with open(filename, "wb") as f:
-                        f.write(data)
+                        return await response.read()
 
         except Exception as error:
             print(f"Download failed: {error}")
