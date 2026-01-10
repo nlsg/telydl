@@ -18,7 +18,7 @@ class Downloader:
         youtube_downloader: YoutubeDownloader | None = None,
     ):
         self.tidal_downloader = tidal_downloader or TidalDownloader(
-            base_path=base_directory
+            base_directory=base_directory
         )
         self.youtube_downloader = youtube_downloader or YoutubeDownloader(
             base_directory=base_directory
