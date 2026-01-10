@@ -56,6 +56,8 @@ async def download_albums_recursive(
     _logger.info(f" R:{dl.fmt(album.get('album'))}")
     for track in album.get("tracks"):
         try:
+            if track.get("id") in visited:
+                raise RuntimeError("track already downloaded")
             path = await dl.download_track(track=track)
         except Exception as e:
             _logger.info(f"failed to doenload {dl.fmt(track)}: {e}")
@@ -69,6 +71,7 @@ async def download_albums_recursive(
             album=await api.getAlbum(a.get("id")),
             depth=depth,
             limit=limit,
+            visited=visited,
             __recursion_counter=__recursion_counter + 1,
         )
 
