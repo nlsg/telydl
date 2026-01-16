@@ -109,7 +109,7 @@ async def add_flac_metadata(
 
     # Add standard tags
     if x := track.get("title"):
-        mix = track.get("version", "Original Mix")
+        mix = track.get("version") or "Original Mix"
         audio["TITLE"] = f"{x} ({mix})"
     if x := track.get("artist", {}).get("name"):
         try:
