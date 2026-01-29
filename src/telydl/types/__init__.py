@@ -21,7 +21,7 @@ class Track:
 
     @property
     def filename(self) -> str:
-        return sanitize_filename(f"{','.join(self.artists)} - {self.name}")
+        return sanitize_filename(f"{', '.join(self.artists)} - {self.name}")
 
     def __str__(self):
         return f"{self.filename} [{self.id}] ({self.duration / 60:.2f}min)"
