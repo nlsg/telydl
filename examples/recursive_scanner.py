@@ -11,7 +11,7 @@ from telegram import Bot
 
 from telydl.downloaders.tidal.downloader import TidalDownloader
 from telydl.downloaders.procotols import InfoValidationError, DuplicationError
-from telydl.types import Track, RawTrack
+from telydl.schemas import Track, RawTrack
 
 from telydl.util import setup_logging
 from telydl.database import DBService, init_db

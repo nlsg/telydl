@@ -15,7 +15,7 @@ from telydl.bot import TelyDlBot
 from telydl.downloaders import YoutubeDownloader, Downloader, TidalDownloader
 
 from telydl.downloaders.procotols import InfoValidationError
-from telydl.types import Track, RawTrack
+from telydl.schemas import Track, RawTrack
 from telydl.util import setup_logging
 
 setup_logging()

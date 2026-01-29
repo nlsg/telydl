@@ -8,7 +8,7 @@ import asyncio
 import yt_dlp
 
 from telydl.util import ensure_list
-from telydl.types import Track, RawTrack
+from telydl.schemas import Track, RawTrack
 from telydl.database import DBService
 
 from ..procotols import (

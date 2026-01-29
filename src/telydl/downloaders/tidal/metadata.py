@@ -6,7 +6,7 @@ from aiohttp import ClientSession, ClientTimeout
 from mutagen.flac import FLAC, Picture
 from mutagen.mp4 import MP4, MP4Cover
 
-from telydl.types import Track
+from telydl.schemas import Track
 
 if TYPE_CHECKING:
     from telydl.downloaders.tidal.api import LosslessAPI
