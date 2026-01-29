@@ -17,7 +17,7 @@ _logger.setLevel(logging.DEBUG)
 
 class TokenlessSpotifyDownloader(BaseYDLDownloader):
     @staticmethod
-    def fetch_track_metadata(spotify_url: str) -> dict:
+    def fetch_track_metadata(spotify_url: str) -> list[dict]:
         """
         Fetch metadata for a Spotify track/album/playlist.
         Only uses HTML scraping (no tokens needed).
