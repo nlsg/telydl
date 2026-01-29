@@ -1,7 +1,7 @@
 import pytest
-import pytest_asyncio  # noqa: F401.
+import pytest_asyncio  # noqa: F401
 
-from conftest import ALBUMS, TRACKS, downloader, TidalDownloader  # noqa: F401.
+from conftest import ALBUMS, TRACKS, downloader, TidalDownloader  # noqa: F401
 
 
 __used__ = [
