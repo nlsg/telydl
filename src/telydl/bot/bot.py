@@ -306,7 +306,7 @@ class TelyDlBot:
         msg = f"bot error: {context.error}"
         _logger.error(msg)
         update.char_
-        context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
 
     async def _process_text_command(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
