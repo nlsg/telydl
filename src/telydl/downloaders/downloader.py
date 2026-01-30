@@ -39,7 +39,7 @@ class Downloader:
             _logger.info("complete tidal success!")
             return results
 
-        results_ = []
+        results_: list[Path | None] = []
         for result, url in zip(results, urls):
             if result:
                 results_.append(result)

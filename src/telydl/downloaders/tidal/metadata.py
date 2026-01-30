@@ -218,7 +218,8 @@ async def add_m4a_metadata(
         except (ValueError, IndexError):
             pass
 
-    audio.tags.update(tags)
+    if audio.tags:
+        audio.tags.update(tags)
 
     # Add album artwork
     if track.get("album", {}).get("cover") and api:

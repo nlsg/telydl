@@ -268,6 +268,8 @@ class TelyDlBot:
     async def _get_file_command(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
+        if not update.message:
+            return
         if len(context.args) != 1:
             await update.message.reply_text(
                 "Usage: /get <file/pattern> must just match one file"
@@ -293,11 +295,15 @@ class TelyDlBot:
     async def _get_log_command(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
+        if not update.message:
+            return
         await update.message.reply_document(Path("bot.log").resolve())
 
     async def _help_command(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
+        if not update.message:
+            return
         await update.message.reply_text("Help!")
 
     async def _error_handler(
@@ -312,6 +318,8 @@ class TelyDlBot:
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
         message = update.message
+        if not message:
+            return
         chat_id = update.effective_chat.id
 
         if not self.is_authorized(update=update, context=context):

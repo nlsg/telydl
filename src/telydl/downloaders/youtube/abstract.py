@@ -80,7 +80,7 @@ class BaseYDLDownloader(BaseDownloader):
     def _download_sync(
         self, url_list: list[str], status_callback: DownloadCallback | None = None
     ) -> list[Path | None]:
-        results = []
+        results: list[Path | None] = []
         for info in self.iter_infos(url_list):
             url = info.get("original_url")
             self._run_callback(

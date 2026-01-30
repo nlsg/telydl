@@ -202,7 +202,7 @@ class LosslessAPI:
                 return match.group(0) if match else None
         except Exception as error:
             print(f"Failed to decode manifest: {error}")
-            return None
+        return None
 
     def deduplicateAlbums(self, albums: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         unique = {}
