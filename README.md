@@ -136,7 +136,7 @@ Big Thanks to the [monochrome project](https://github.com/SamidyFR/monochrome), 
 
 Suggestions for mirrored APIs are always welcome - just issue or make a PR
 
-Also thanks to `youtube-dl` / `yt-dlp`, very awesome tool I love and use for years.
+Also thanks to `youtube-dl` / [yt-dlp](https://github.com/yt-dlp/yt-dlp), very awesome tool I love and use for years.
 
 ## Related Projects / Links / Inspirations
 
