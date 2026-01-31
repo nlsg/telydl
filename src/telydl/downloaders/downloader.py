@@ -17,6 +17,7 @@ class Downloader:
         tidal_downloader: TidalDownloader | None = None,
         youtube_downloader: YoutubeDownloader | None = None,
     ):
+        self.base_directory = base_directory
         self.tidal_downloader = tidal_downloader or TidalDownloader(
             base_directory=base_directory
         )
