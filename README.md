@@ -1,6 +1,6 @@
 # TelyDL - HiRes Telegram Music Downloader Bot
 
-TelyDL is a Telegram bot that allows whitelisted users to download music from Tidal and Spotify ( through monochrome: FLAC ) and YouTube ( as fallback: MP3 ) directly to the server running it.
+TelyDL is a Telegram bot that allows whitelisted users to download music from Tidal and Spotify ( through [monochrome](https://github.com/SamidyFR/monochrome) and YouTube ( as fallback: MP3 ) directly to the server running it.
 
 The bot handles audio extraction, metadata management, and provides a convenient interface for managing downloaded files.
 
@@ -132,29 +132,18 @@ This project is licensed under the GPLv3 License.
 
 ## Credits
 
-Big Thanks to the monochrome projects, the project would not be able to provide high res downloads without it
+Big Thanks to the [monochrome project](https://github.com/SamidyFR/monochrome), the project would not be able to provide high res downloads without it
 
 Suggestions for mirrored APIs are always welcome - just issue or make a PR
 
-Also thanks to youtube-dl / yt-dlp, very awsome tool I love and use for years.
+Also thanks to `youtube-dl` / `yt-dlp`, very awesome tool I love and use for years.
 
 ## Related Projects / Links / Inspirations
 
 - [Tidal UI](https://github.com/uimaxbai/tidal-ui)
 - [HiFi API](https://github.com/uimaxbai/hifi-api)
 - [TIDAL](https://github.com/hmelder/TIDAL)
-
 - [Reddit thread](https://www.reddit.com/r/musichoarder/comments/1pa0ik2/what_is_qqdl/)
-
-frontends:
-
-* [https://music.binimum.org/](https://music.binimum.org/)
-* [https://monochrome.samidy.com/docs](https://monochrome.samidy.com/docs)
-
-api:	
-
-* [https://monochrome-api.samidy.com/docs](https://monochrome-api.samidy.com/docs)
-
-projects:
-
-* [https://github.com/uimaxbai/tidal-ui](https://github.com/uimaxbai/tidal-ui)
+- [https://monochrome.samidy.com/docs](https://monochrome.samidy.com/docs)
+- [https://music.binimum.org/](https://music.binimum.org/)
+- [https://monochrome-api.samidy.com/docs](https://monochrome-api.samidy.com/docs)
