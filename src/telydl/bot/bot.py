@@ -7,6 +7,7 @@ import functools
 from datetime import datetime
 from pathlib import Path
 
+import asyncio
 import re
 
 from telegram import (
@@ -48,12 +49,14 @@ class TelyDlBot:
         token: str,
         downloader: "DownloaderProtocol",
         whitelist: list[int],
+        admin: int | None = None,
         DBService=DBService,
     ):
         self.app: Application = ApplicationBuilder().token(token).build()
         self.downloader = downloader
         self._started = False
         self.whitelist = whitelist
+        self.admin = admin or whitelist[0]
         self.DBService = DBService
 
     async def start(self):
@@ -174,7 +177,16 @@ class TelyDlBot:
 
     def is_authorized(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
         auth = update.effective_user.id in self.whitelist
-        auth or _logger.warning(f"unauthorized user: {update.effective_user}")
+        if not auth:
+            _logger.warning(f"unauthorized user: {update.effective_user}")
+            asyncio.run_coroutine_threadsafe(
+                coro=context.bot.send_message(
+                    chat_id=self.admin,
+                    text=f"unauthorized user access denied!\n User: {update.effective_user}\n Msg: {update.message}",
+                ),
+                loop=asyncio.get_event_loop(),
+            )
+
         return auth
 
     # handlers
@@ -325,7 +337,7 @@ class TelyDlBot:
         if not self.is_authorized(update=update, context=context):
             await context.bot.send_message(
                 chat_id=chat_id,
-                text=f"{update.effective_user.name} is not authorized, authorization request sent!",
+                text=f"{update.effective_user.name} is not authorized, download omitted",
             )
             # await self._send_auth_request(update.effective_user) #TODO
             return
