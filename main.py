@@ -38,6 +38,7 @@ CHECK_DISK_FREQUENCY = int(os.getenv("TELYDL_CHECK_DISK_FREQUENCY", "10"))
 BASE_DIRECTORY = Path(os.getenv("TELYDL_BASE_DIRECTORY", "downloads")).resolve()
 
 WHITE_LIST = os.getenv("TELYDL_WHITELIST", "")
+ADMIN = os.getenv("TELYDL_ADMIN")
 
 if not (BOT_TOKEN := os.getenv("TELYDL_BOT_TOKEN")):
     _logger.error("cannot find bot token in environment: TELYDL_BOT_TOKEN")
@@ -112,6 +113,7 @@ async def main():
     bot = TelyDlBot(
         token=BOT_TOKEN,
         downloader=downloader,
+        admin=ADMIN,
         whitelist=[int(id) for id in WHITE_LIST.split(",")],
     )
     _logger.debug("initialized TelyDlBot")
